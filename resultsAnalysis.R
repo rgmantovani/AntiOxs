@@ -52,6 +52,18 @@ ggsave(g, file = "plots/fig5_boxplotOverall.pdf", width = 12.2, height = 5.31)
 # Average performance plot
 #----------------------
 
+# TODO:
+# - average performance plot (line)
+# - order boxplot
+# - rankear os algoritmos
+# - olhar matrizes de confusão da arvore
+# - olhar as estatisticas das classes preditas erradamente
+# - olhar a arvore de decisão/regras
+
+
+#----------------------
+#----------------------
+
 # which.max(all.results$acc.test.mean)
 # [1] 651
 # > all.results[which.max(all.results$acc.test.mean),]
