@@ -88,9 +88,6 @@ data2 = data[]
 df2   = melt(data2, id.vars = 1)
 
 # rename factors
-c("1", "2", "3")
-c("TBHQ", "BHA", "BHT")
-
 df2$Class[df2$Class == "1"] = "TBHQ"
 df2$Class[df2$Class == "2"] = "BHA"
 df2$Class[df2$Class == "3"] = "BHT"
