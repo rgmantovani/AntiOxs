@@ -5,11 +5,17 @@ library(ggplot2)
 library(reshape2)
 library(mlr)
 
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+if(!dir.exists("/plots")) {
+  dir.create("/plots")
+}
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
-data = read.csv(file = "biodiesel.csv", sep = ";")
+data = read.csv(file = "data/biodiesel.csv", sep = ";")
 data$X = NULL
 data$X.1 = NULL
 data$X.2 = NULL
@@ -23,7 +29,7 @@ sub = data.frame(table(data$Z))
 g = ggplot(data = sub, mapping = aes(x = Var1, y = Freq, fill = Var1))
 g = g + geom_bar(stat="identity") + theme_bw()
 g = g + labs(x = "Classe", y = "Quantidade", fill = "Antixodidante")
-ggsave(g, file = "distribuicaoClasse.pdf", width = 4.37, height = 3.24)
+ggsave(g, file = "plots/distribuicaoClasse.pdf", width = 4.37, height = 3.24)
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -56,7 +62,7 @@ g2 = g2 + scale_fill_gradient2(low = "blue", high = "red", mid = "white",
 g2 = g2 + theme_bw()
 g2 = g2 + theme(axis.text.x = element_text(angle = 90, vjust = 1,hjust = 1))
 g2 = g2 + labs(x = "", y = "")
-ggsave(g2, file = "correlacaoAtributos.pdf", width = 4.37, height = 3.24)
+ggsave(g2, file = "plots/correlacaoAtributos.pdf", width = 4.37, height = 3.24)
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -72,13 +78,7 @@ new.df$Classe = as.factor(new.df$Class)
 
 g3 = ggplot(new.df, aes(x = PC1, y = PC2, colour = Classe, shape = Classe))
 g3 = g3 + geom_point(size = 3) + theme_bw()
-ggsave(g3, file = "separabilidadePCA.pdf", width = 4.37, height = 3.24)
-
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
-# any(duplicated(data))
-
+ggsave(g3, file = "plots/separabilidadePCA.pdf", width = 4.37, height = 3.24)
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
