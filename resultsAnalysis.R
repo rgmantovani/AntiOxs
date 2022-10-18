@@ -1,6 +1,11 @@
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
+# TODO: tuning for nnet and knn failed (need to debug)
+
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 library(ggplot2)
 options(warn=-1)                # suppress warnings
 
@@ -21,11 +26,10 @@ source("R/getAveragedResults.R")
 #--------------------------------------------------------------
 
 results.file = "output/aggregatedResults.RData"
+all.files    = list.files(path = "./output", recursive = TRUE, full.names = TRUE)
 
 if(!file.exists(results.file)) {
   cat(' - Generating aggregated results for the first time.')
-
-  all.files = list.files(path = "./output", recursive = TRUE, full.names = TRUE)
 
   # all results from N repetitions
   all.results = getRepsResults(all.files = all.files)
@@ -45,6 +49,26 @@ all.results$task.id = as.factor(all.results$task.id)
 all.results$algo = paste0(all.results$learner.id,".", all.results$Normalizacao)
 all.results$algo = gsub(x = all.results$algo, pattern = "classif.|.preproc|.tuned", replacement = "")
 all.results$algo = as.factor(all.results$algo)
+
+#--------------------------------------------------------------
+# Reordering factors
+#--------------------------------------------------------------
+
+# for each task, measure the rankings
+ordered.levels = c("xgboost.no_norm", "xgboost.with_norm",
+  "rpart.no_norm", "rpart.with_norm",
+  "svm.no_norm", "svm.with_norm",
+  "C50.no_norm", "C50.with_norm",
+  "J48.no_norm", "J48.with_norm",
+  "nnet.no_norm", "nnet.with_norm",
+  "naiveBayes.no_norm", "naiveBayes.with_norm",
+  "randomForest.no_norm", "randomForest.with_norm",
+  "gausspr.no_norm", "gausspr.with_norm",
+  "kknn.no_norm", "kknn.with_norm")
+
+all.results$algo = factor(all.results$algo, levels = ordered.levels)
+all.results$task = factor(all.results$task,
+    levels = c("originalData", "preprocessedData", "pcaData"))
 
 #--------------------------------------------------------------
 # Boxplot with all results
@@ -91,40 +115,12 @@ top = avg.df[1:20,]
 # 55      originalData   xgboost.no_norm   none     0.5788545  0.04693872
 # 57  preprocessedData   xgboost.no_norm   none     0.5788545  0.04693872
 
-# for each task, measure the rankings
-ordered.levels = c("xgboost.no_norm", "xgboost.with_norm",
-  "rpart.no_norm", "rpart.with_norm",
-  "svm.no_norm", "svm.with_norm",
-  "C50.no_norm", "C50.with_norm",
-  "J48.no_norm", "J48.with_norm",
-  "nnet.no_norm", "nnet.with_norm",
-  "naiveBayes.no_norm", "naiveBayes.with_norm",
-  "randomForest.no_norm", "randomForest.with_norm",
-  "gausspr.no_norm", "gausspr.with_norm",
-  "kknn.no_norm", "kknn.with_norm")
+#----------------------
+#----------------------
 
 avg.df$algo = factor(avg.df$algo, levels = ordered.levels)
 avg.df$task = factor(avg.df$task,
   levels = c("originalData", "preprocessedData", "pcaData"))
-
-#--------------------------------------------------------------
-# Average performance plot
-#--------------------------------------------------------------
-
-g1 = ggplot(avg.df, aes(x = algo, y = acc.test.mean, group = tuning, colour = tuning))
-g1 = g1 + geom_line() + geom_point() + facet_grid(.~task)
-g1 = g1 + theme(axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1, size = 9))
-g1 = g1 + labs(x = "Algoritmo", y = "Acurácia (teste)")
-ggsave(g1, file = "fig6_performanceMedia.pdf", width = 9.75, height = 4.14)
-
-# TODO:
-# - olhar matrizes de confusão da arvore
-# - olhar as estatisticas das classes preditas erradamente
-# - olhar a arvore de decisão/regras
-
-
-#----------------------
-#----------------------
 
 # which.max(all.results$acc.test.mean)
 # [1] 651
@@ -135,6 +131,105 @@ ggsave(g1, file = "fig6_performanceMedia.pdf", width = 9.75, height = 4.14)
 # 651      0.745614     0.2687831            24.08733           0.002666667
 #    Normalizacao Resampling Tuning Repetitions              algo
 # 651      no_norm       3-CV random           1 svm.tuned.no_norm
+
+#--------------------------------------------------------------
+# Average performance plot
+#--------------------------------------------------------------
+
+g1 = ggplot(avg.df, aes(x = algo, y = acc.test.mean, group = tuning, colour = tuning))
+g1 = g1 + geom_line() + geom_point() + facet_grid(.~task)
+g1 = g1 + theme(axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1, size = 9))
+g1 = g1 + labs(x = "Algoritmo", y = "Acurácia (teste)")
+ggsave(g1, file = "plots/fig6_performanceMedia.pdf", width = 9.75, height = 4.14)
+
+#--------------------------------------------------------------
+#  Loading predictions
+#--------------------------------------------------------------
+
+# xgboost with no norm, tuned
+xgboost.files =  all.files[grepl(x = all.files,
+  pattern = "originalData/classif.xgboost/no_norm/none/3-CV/random")]
+
+#loading preditctions
+pred.xgboost.list = lapply(xgboost.files, function(file){
+  suppressWarnings(load(file, verbose = FALSE))
+  pred.df = mlr::getBMRPredictions(bmr=res, as.df=TRUE)
+  sub.pred.df = pred.df[,c("id", "truth", "response")]
+  return(sub.pred.df)
+})
+
+# rpart with no norm, none
+rpart.files = all.files[grepl(x = all.files,
+   pattern = "originalData/classif.rpart/no_norm/none/3-CV/none")]
+
+pred.rpart.list = lapply(rpart.files, function(file){
+  suppressWarnings(load(file, verbose = FALSE))
+  pred.df = mlr::getBMRPredictions(bmr=res, as.df=TRUE)
+  sub.pred.df = pred.df[,c("id", "truth", "response")]
+  return(sub.pred.df)
+})
+
+#--------------------------------------------------------------
+# Generating Confusion Matrices
+#--------------------------------------------------------------
+
+# Xgboost confusion matrices
+aux.mat.xg = lapply(pred.xgboost.list, function(xglist){
+  return(table(xglist[,-1]))
+})
+xg.mat = round(Reduce("+", aux.mat.xg)/length(aux.mat.xg))
+
+# Rpart confusion matrices
+aux.mat.dt = lapply(pred.rpart.list, function(dtlist){
+  return(table(dtlist[,-1]))
+})
+dt.mat = round(Reduce("+", aux.mat.dt)/length(aux.mat.dt))
+
+
+
+#--------------------------------------------------------------
+# Confusion matrices plot
+#--------------------------------------------------------------
+
+dt.df = reshape2::melt(dt.mat)
+dt.df$algo = "rpart"
+xg.df = reshape2::melt(xg.mat)
+xg.df$algo = "xgboost"
+
+joined.df = rbind(dt.df, xg.df)
+
+# ---------------
+# renaming factors
+# ---------------
+
+joined.df$truth[joined.df$truth == "1"] = "TBHQ"
+joined.df$truth[joined.df$truth == "2"] = "BHA"
+joined.df$truth[joined.df$truth == "3"] = "BHT"
+joined.df$response[joined.df$response == "1"] = "TBHQ"
+joined.df$response[joined.df$response == "2"] = "BHA"
+joined.df$response[joined.df$response == "3"] = "BHT"
+
+levels(joined.df$truth) = c("TBHQ", "BHA", "BHT")
+levels(joined.df$response) = c("TBHQ", "BHA", "BHT")
+
+# ---------------
+# confusion matrices
+# ---------------
+
+g7 = ggplot(data = joined.df, mapping = aes(x = truth, y = response))
+g7 = g7 + geom_tile(aes(fill = value), colour = "white") + facet_grid(.~algo)
+g7 = g7 + geom_text(aes(label = sprintf("%1.0f", value)), vjust = 1)
+g7 = g7 + scale_fill_gradient2(low = "white", high = "red")
+g7 = g7 + theme_bw() + theme(legend.position = "none")
+g7 = g7 + labs(x = "Classe Real", y = "Classe Predita")
+ggsave(g7, file = "plots/fig7_matrizesConfusao.pdf", width=5.82, heitgh=2.97)
+
+#--------------------------------------------------------------
+#--------------------------------------------------------------
+
+# TODO:
+# - olhar as estatisticas das classes preditas erradamente
+# - olhar a arvore de decisão/regras
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
