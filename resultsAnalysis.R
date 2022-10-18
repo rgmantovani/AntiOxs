@@ -7,6 +7,8 @@
 # ------------------------------------------------------------------------------
 
 library(ggplot2)
+library(reshape2)
+
 options(warn=-1)                # suppress warnings
 
 # output directory
@@ -185,8 +187,6 @@ aux.mat.dt = lapply(pred.rpart.list, function(dtlist){
 })
 dt.mat = round(Reduce("+", aux.mat.dt)/length(aux.mat.dt))
 
-
-
 #--------------------------------------------------------------
 # Confusion matrices plot
 #--------------------------------------------------------------
@@ -227,9 +227,29 @@ ggsave(g7, file = "plots/fig7_matrizesConfusao.pdf", width=5.82, heitgh=2.97)
 #--------------------------------------------------------------
 #--------------------------------------------------------------
 
-# TODO:
-# - olhar as estatisticas das classes preditas erradamente
 # - olhar a arvore de decisão/regras
+dataset = farff::readARFF(path = "tasks/originalData.arff")
+dataset$Class = as.character(dataset$Class)
+dataset$Class[dataset$Class == "1"] = "TBHQ"
+dataset$Class[dataset$Class == "2"] = "BHA"
+dataset$Class[dataset$Class == "3"] = "BHT"
+
+task  = mlr::makeClassifTask(id = "originalData", data = dataset, target = "Class")
+lrn   = mlr::makeLearner(cl = "classif.rpart")
+model = mlr::train(learner = lrn, task = task)
+
+unwp.models = mlr::getLearnerModel(model = model, more.unwrap = TRUE)
+
+pdf(file = "plots/fig8_arvoreDecisao.pdf", width = 10, height = 4.5)
+plot(partykit::as.party(unwp.models))
+dev.off()
+
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+# TODO:
+# - descobrir os exemplos errados
+# - olhar as estatisticas das classes preditas erradamente
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
