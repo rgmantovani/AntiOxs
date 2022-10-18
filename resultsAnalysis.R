@@ -8,6 +8,8 @@
 
 library(ggplot2)
 library(reshape2)
+library(mlr)
+
 # depends algo on mlr, partykit, dplyr
 
 options(warn=-1)                # suppress warnings

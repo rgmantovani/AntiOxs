@@ -21,6 +21,12 @@ data$X.1 = NULL
 data$X.2 = NULL
 data$X.3 = NULL
 
+data$Class[data$Class == "1"] = "TBHQ"
+data$Class[data$Class == "2"] = "BHA"
+data$Class[data$Class == "3"] = "BHT"
+levels(data$Class) = c("TBHQ", "BHA", "BHT")
+
+
 # ------------------------------------------------------------------------------
 #  Plot: distribuição de classes
 # ------------------------------------------------------------------------------
@@ -28,6 +34,7 @@ data$X.3 = NULL
 sub = data.frame(table(data$Class))
 g = ggplot(data = sub, mapping = aes(x = Var1, y = Freq, fill = Var1))
 g = g + geom_bar(stat="identity") + theme_bw()
+g = g + geom_text(aes(label=Freq), vjust=-0.5)
 g = g + labs(x = "Classe", y = "Quantidade", fill = "Antixodidante")
 ggsave(g, file = "plots/fig1_distribuicaoClasse.pdf", width = 4.37, height = 3.24)
 
@@ -83,21 +90,28 @@ ggsave(g3, file = "plots/fig3_separabilidadePCA.pdf", width = 4.37, height = 3.2
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
+# -------------------
 # boxplot dos atributos
-data2 = data[]
-df2   = melt(data2, id.vars = 1)
+# -------------------
 
-# rename factors
-df2$Class[df2$Class == "1"] = "TBHQ"
-df2$Class[df2$Class == "2"] = "BHA"
-df2$Class[df2$Class == "3"] = "BHT"
-levels(df2$Class) = c("TBHQ", "BHA", "BHT")
+data2 = data
+data2.norm = mlr::normalizeFeatures(obj = data2 , target = "Class",
+  method = "range", range = c(0, 1), on.constant = "quiet")
+df2   = melt(data2.norm, id.vars = 1)
 
+bg2 = ggplot(df2, aes(x = variable, y = value))
+bg2 = bg2 + geom_boxplot() + facet_grid(Class~.)
+bg2 = bg2 + labs(x = "Característica", y = "Valor")
+ggsave(bg2, file = "plots/fig4A_FeaturesBoxplot.pdf", width = 5.38, height = 5.5)
 
-bg = ggplot(df2, aes(x = variable, y = log(value)))
-bg = bg + geom_boxplot() + facet_grid(.~Class) + theme_bw()
-bg = bg + labs(x = "Característica", y = "log(valor)")
-ggsave(bg, file = "plots/fig4_FeaturesBoxplot.pdf", width = 9.05, height = 2.93)
+# -------------------
+# violinplot dos atributos
+# -------------------
+
+vg2 = ggplot(df2, aes(x = variable, y = value))
+vg2 = vg2 + geom_violin() + geom_boxplot(width=0.1) + facet_grid(Class~.)
+vg2 = vg2 + labs(x = "Característica", y = "Valor")
+ggsave(vg2, file = "plots/fig4B_FeaturesViolinPlot.pdf", width = 5.38, height = 5.5)
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
