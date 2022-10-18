@@ -8,6 +8,7 @@
 
 library(ggplot2)
 library(reshape2)
+# depends algo on mlr, partykit, dplyr
 
 options(warn=-1)                # suppress warnings
 
@@ -225,9 +226,9 @@ g7 = g7 + labs(x = "Classe Real", y = "Classe Predita")
 ggsave(g7, file = "plots/fig7_matrizesConfusao.pdf", width=5.82, heitgh=2.97)
 
 #--------------------------------------------------------------
+# Decision tree plot (Rules)
 #--------------------------------------------------------------
 
-# - olhar a arvore de decisão/regras
 dataset = farff::readARFF(path = "tasks/originalData.arff")
 dataset$Class = as.character(dataset$Class)
 dataset$Class[dataset$Class == "1"] = "TBHQ"
@@ -245,11 +246,41 @@ plot(partykit::as.party(unwp.models))
 dev.off()
 
 # ------------------------------------------------------------------------------
+#
 # ------------------------------------------------------------------------------
 
-# TODO:
-# - descobrir os exemplos errados
-# - olhar as estatisticas das classes preditas erradamente
+# - descobrir os exemplos classificados erradamente
+aux.miss.xg = lapply(pred.xgboost.list, function(elem) {
+  return(elem[which(elem$truth != elem$response),])
+})
+ids.xg = lapply(aux.miss.xg, function(elem) {
+  return(elem$id)
+})
+tab.xg   = table(unlist(ids.xg))
+sel.ids.xg = as.numeric(names(tab.xg[tab.xg > 5]))
+
+
+aux.miss.dt = lapply(pred.rpart.list, function(elem) {
+  return(elem[which(elem$truth != elem$response),])
+})
+ids.dt = lapply(aux.miss.dt, function(elem) {
+  return(elem$id)
+})
+tab.dt   = table(unlist(ids.dt))
+sel.ids.dt = as.numeric(names(tab.dt[tab.dt > 5]))
+
+all.ids = unique(c(sel.ids.dt, sel.ids.xg))
+
+# - olhar as estatisticas dos exemplos com erros
+miss.df = dataset[all.ids, ]
+miss.df.norm = mlr::normalizeFeatures(obj = miss.df , target = "Class",
+  method = "range", range = c(0, 1), on.constant = "quiet")
+
+miss.df2 = melt(miss.df.norm, id.vars = ncol(miss.df))
+bg = ggplot(miss.df2, aes(x = variable, y = value))
+bg = bg + geom_boxplot() + facet_grid(.~Class, scales = "free")
+bg = bg + labs(x = "Característica", y = "Valor Normalizado")
+ggsave(bg, file = "plots/fig9_caracteristicas_erros.pdf", width = 8.89, height = 4.05)
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------

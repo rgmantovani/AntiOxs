@@ -29,7 +29,7 @@ sub = data.frame(table(data$Class))
 g = ggplot(data = sub, mapping = aes(x = Var1, y = Freq, fill = Var1))
 g = g + geom_bar(stat="identity") + theme_bw()
 g = g + labs(x = "Classe", y = "Quantidade", fill = "Antixodidante")
-ggsave(g, file = "plots/distribuicaoClasse.pdf", width = 4.37, height = 3.24)
+ggsave(g, file = "plots/fig1_distribuicaoClasse.pdf", width = 4.37, height = 3.24)
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ g2 = g2 + scale_fill_gradient2(low = "blue", high = "red", mid = "white",
 g2 = g2 + theme_bw()
 g2 = g2 + theme(axis.text.x = element_text(angle = 90, vjust = 1,hjust = 1))
 g2 = g2 + labs(x = "", y = "")
-ggsave(g2, file = "plots/correlacaoAtributos.pdf", width = 4.37, height = 3.24)
+ggsave(g2, file = "plots/fig2_correlacaoAtributos.pdf", width = 4.37, height = 3.24)
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ new.df$Classe = as.factor(new.df$Class)
 
 g3 = ggplot(new.df, aes(x = PC1, y = PC2, colour = Classe, shape = Classe))
 g3 = g3 + geom_point(size = 3) + theme_bw()
-ggsave(g3, file = "plots/separabilidadePCA.pdf", width = 4.37, height = 3.24)
+ggsave(g3, file = "plots/fig3_separabilidadePCA.pdf", width = 4.37, height = 3.24)
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -91,7 +91,6 @@ df2   = melt(data2, id.vars = 1)
 df2$Class[df2$Class == "1"] = "TBHQ"
 df2$Class[df2$Class == "2"] = "BHA"
 df2$Class[df2$Class == "3"] = "BHT"
-
 levels(df2$Class) = c("TBHQ", "BHA", "BHT")
 
 
@@ -99,12 +98,6 @@ bg = ggplot(df2, aes(x = variable, y = log(value)))
 bg = bg + geom_boxplot() + facet_grid(.~Class) + theme_bw()
 bg = bg + labs(x = "Característica", y = "log(valor)")
 ggsave(bg, file = "plots/fig4_FeaturesBoxplot.pdf", width = 9.05, height = 2.93)
-
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
-# Arvore de Decisão (com dataset todo) - um dos melhores modelos
-
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
