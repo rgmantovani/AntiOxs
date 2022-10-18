@@ -1,7 +1,6 @@
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
-
 library(ggplot2)
 options(warn=-1)                # suppress warnings
 
@@ -9,6 +8,10 @@ options(warn=-1)                # suppress warnings
 if(!dir.exists(path="output")) {
   dir.create(path="output")
 }
+
+#--------------------------------------------------------------
+# Loading previous results
+#--------------------------------------------------------------
 
 results.file = "output/aggregatedResults.RData"
 
@@ -21,32 +24,38 @@ if(!file.exists(results.file)) {
   all.results = getRepsResults(all.files = all.files)
   save(all.results, file = results.file)
 
-  # > max(results$acc.test.mean, na.rm = TRUE)
-  # [1] 0.745614
-
-  # average results
-  # avg.results = data.frame(do.call("rbind", lapply(all.results, colMeans, TRUE)))
-
 } else {
   cat(' - Results already extracted. Loading file.\n')
-  load(output.file, verbose = TRUE)
+  load(results.file, verbose = TRUE)
 }
 
-#----------------------
+#--------------------------------------------------------------
 # Creating a new feature joining learner.id and Normalization
-#----------------------
+#--------------------------------------------------------------
+
+all.results$task.id = as.factor(all.results$task.id)
 
 all.results$algo = paste0(all.results$learner.id,".", all.results$Normalizacao)
 all.results$algo = gsub(x = all.results$algo, pattern = "classif.|.preproc|.tuned", replacement = "")
+all.results$algo = as.factor(all.results$algo)
 
-#----------------------
-# Average boxplot plot
-#----------------------
+#--------------------------------------------------------------
+# Boxplot with all results
+#--------------------------------------------------------------
 
 g = ggplot(all.results, aes(x = algo, y =  acc.test.mean))
 g = g + geom_boxplot() + facet_grid(Tuning~task.id)
 g = g + theme(axis.text.x = element_text(angle = 90, vjust = .5, hjust = 1, size = 9))
+g = g + labs(x = "Algoritmo", y = "Acurácia")
 ggsave(g, file = "plots/fig5_boxplotOverall.pdf", width = 12.2, height = 5.31)
+
+#--------------------------------------------------------------
+#--------------------------------------------------------------
+
+# average results
+avg.df = getAveragedResults(all.results = all.results)
+
+# for each task, measure the rankings
 
 #----------------------
 # Average performance plot
