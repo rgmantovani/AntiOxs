@@ -240,7 +240,6 @@ dataset$Class[dataset$Class == "3"] = "BHT"
 task  = mlr::makeClassifTask(id = "originalData", data = dataset, target = "Class")
 lrn   = mlr::makeLearner(cl = "classif.rpart")
 model = mlr::train(learner = lrn, task = task)
-
 unwp.models = mlr::getLearnerModel(model = model, more.unwrap = TRUE)
 
 pdf(file = "plots/fig8_arvoreDecisao.pdf", width = 10, height = 4.5)
@@ -248,7 +247,21 @@ plot(partykit::as.party(unwp.models))
 dev.off()
 
 # ------------------------------------------------------------------------------
-#
+# Xgboost feature importance
+# ------------------------------------------------------------------------------
+
+xg.lrn   = mlr::makeLearner(cl = "classif.xgboost")
+xg.model = mlr::train(learner = xg.lrn, task = task)
+xg.unwp.models = mlr::getLearnerModel(model = xg.model, more.unwrap = TRUE)
+
+importance_matrix = xgboost::xgb.importance(model = xg.unwp.models)
+importance_matrix$Feature = factor(importance_matrix$Feature, levels = importance_matrix$Feature)
+g9 = ggplot(importance_matrix, aes(x = Feature, y = Gain)) + geom_bar(stat = "identity")
+g9 = g9 + labs(x = "Atributo", y = "Importância") + theme_bw()
+ggsave(g9, file = "plots/fig10_xgboostFeatures.pdf", width = 4.87, height = 3.32)
+
+# ------------------------------------------------------------------------------
+# Missclassified examples
 # ------------------------------------------------------------------------------
 
 # - descobrir os exemplos classificados erradamente
